@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Aquarium Friends",
+  "description": "An interactive aquarium game where two children can watch and feed colorful fish. Click the 'Feed Fish' button to drop food, or click anywhere in the water to feed them directly. Watch the fish swim to eat it.",
+  "requestFramePermissions": []
+}
