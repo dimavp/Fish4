@@ -1,19 +1,35 @@
-# 1. Берем готовый образ Node.js
-FROM node:20-alpine
+# --- ЭТАП 1: СБОРКА (Конструктор) ---
+# Берем Node.js, чтобы "собрать" проект
+FROM node:20-alpine AS builder
+WORKDIR /app
 
-# 2. Создаем рабочую папку
-WORKDIR /usr/src/app
-
-# 3. Копируем package.json и устанавливаем 'express'
-# (ВАЖНО: У вас в репозитории должен быть package.json!)
+# Копируем package.json и устанавливаем зависимости
 COPY package*.json ./
 RUN npm install
 
-# 4. Копируем весь остальной код (включая server.js)
+# Копируем ВЕСЬ код проекта
 COPY . .
 
-# 5. Сообщаем, что "Повар" будет на порту 3000
-EXPOSE 3000
+# Запускаем "сборку" (Vite создаст папку 'dist')
+RUN npm run build
 
-# 6. Запускаем "Повара"
-CMD [ "node", "server.js" ]
+# --- ЭТАП 2: РАЗДАЧА (Официант) ---
+# Берем крошечный Nginx
+FROM nginx:stable-alpine
+
+# Копируем "собранные" файлы из папки 'dist' ЭТАПА 1
+# в рабочую папку Nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Настраиваем Nginx, чтобы он работал с React (для URL-адресов)
+RUN echo 'server { \
+      listen 80; \
+      location / { \
+        root /usr/share/nginx/html; \
+        index index.html; \
+        try_files $uri $uri/ /index.html; \
+      } \
+    }' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
